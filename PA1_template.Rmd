@@ -1,25 +1,73 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+title: "Reproducable research PA1"
+author: "Isadora"
+date: "9-2-2020"
+output: html_document
 ---
 
 
 ## Loading and preprocessing the data
+```{r load, echo=TRUE}
+library(readr)
+df <- read_csv("activity.csv")
 
+```
 
 
 ## What is mean total number of steps taken per day?
+```{r mean, echo=TRUE}
+step_all <- aggregate(steps ~ date, df, FUN=sum)
+print("Histogram - total number of steps taken each day:")
+hist(step_all$steps)
 
+print("mean steps:")
+mean(step_all$steps, na.rm = TRUE)
+
+print("median steps:")
+median(step_all$steps, na.rm = TRUE)
+
+```
 
 
 ## What is the average daily activity pattern?
+```{r timeseries mean, echo=TRUE}
+library(ggplot2)
+m_step_int <- aggregate(steps ~ interval, df, mean)
 
+print("Time series plot of the average number of steps taken:")
+ggplot(data = m_step_int, aes(x = interval, y = steps)) +
+  geom_line()
+
+print("The 5-minute interval that, on average, contains the maximum number of steps:")
+m_step_int[which.max(m_step_int$steps),]
+
+```
 
 
 ## Imputing missing values
+```{r impute missings, echo=TRUE}
 
+print("Code to describe and show a strategy for imputing missing data:")
+sum(is.na(df$steps))
+df_imputed<- transform(df, steps = ifelse(is.na(df$steps),m_step_int$steps[match(df$interval, m_step_int$interval)],df$steps))
+
+
+```
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+```{r compare differences, echo=TRUE}
+
+print("Histogram of the total number of steps taken each day after missing values are imputed:")
+step_all_imp <- aggregate(steps ~ date, df_imputed, FUN=sum)
+hist(step_all_imp$steps)
+
+print("Panel plot comparing the average number of steps taken per 5-minute interval across weekdays and weekends:")
+df_imputed$weekday <- ifelse(  weekdays(df_imputed$date) %in% c('maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag'), 'weekday', 'weekend')
+
+m_steps_day<- aggregate(steps ~ interval + weekday, df_imputed, mean)
+ggplot(data = m_steps_day, aes(x = interval, y = steps)) + 
+  geom_line() +
+  facet_grid(weekday ~ .) 
+
+```
